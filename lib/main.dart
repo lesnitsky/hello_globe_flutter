@@ -1,7 +1,16 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+Future<String> helloGlobe() async {
+  final response = await get(Uri.parse('https://hello.globeapp.dev'));
+  return response.body;
+}
 
 void main() {
+  // ignore: avoid_print
+  helloGlobe().then((value) => print(value));
   runApp(const HelloGlobeApp());
 }
 
@@ -91,44 +100,76 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Button(
-            text: 'Hello, Globe!',
-            onPressed: () {
-              final stopwatch = Stopwatch()..start();
-              get(Uri.parse('https://hello.globeapp.dev')).then((value) {
-                setState(() {
-                  duration = stopwatch.elapsed;
-                  response = value.body;
-                  stopwatch.stop();
-                });
-              }).catchError((error) {
-                setState(() {
-                  duration = stopwatch.elapsed;
-                  response = error.toString();
-                  stopwatch.stop();
-                });
-              });
-            },
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Button(
+                  text: 'Hello, Globe!',
+                  onPressed: () {
+                    final stopwatch = Stopwatch()..start();
+                    helloGlobe().then((value) {
+                      setState(() {
+                        duration = stopwatch.elapsed;
+                        response = value;
+                        stopwatch.stop();
+                      });
+                    }).catchError((error) {
+                      setState(() {
+                        duration = stopwatch.elapsed;
+                        response = error.toString();
+                        stopwatch.stop();
+                      });
+                    });
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: response.isNotEmpty
+                      ? Text(
+                          'Globe says: ${response.replaceAll('\n', '')} (took ${duration.inMilliseconds}ms)',
+                          style: const TextStyle(
+                            color: Color(0xffffffff),
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        )
+                      : const SizedBox(height: 14 * 1.2),
+                ),
+              ],
+            ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: response.isNotEmpty
-                ? Text(
-                    'Globe says: ${response.replaceAll('\n', '')} (took ${duration.inMilliseconds}ms)',
-                    style: const TextStyle(
-                      color: Color(0xffffffff),
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  )
-                : const SizedBox(height: 14 * 1.2),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text.rich(
+            TextSpan(
+              children: [
+                const TextSpan(
+                  text: 'Powered by ',
+                  style: TextStyle(
+                    color: Color(0xffffffff),
+                    fontSize: 14,
+                  ),
+                ),
+                TextSpan(
+                  text: 'Globe.dev',
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () => launchUrl(Uri.parse('https://globe.dev')),
+                  style: const TextStyle(
+                    color: Color.fromARGB(255, 59, 239, 255),
+                    fontSize: 14,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
